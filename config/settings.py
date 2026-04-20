@@ -1,0 +1,11 @@
+from dotenv import load_dotenv
+import os
+
+# load .env file
+load_dotenv()
+
+SHAREPOINT_USERNAME = os.getenv("SHAREPOINT_USERNAME")
+SHAREPOINT_PASSWORD = os.getenv("SHAREPOINT_PASSWORD")
+SHAREPOINT_BASE_URL = os.getenv("SHAREPOINT_BASE_URL")
+SHAREPOINT_SITE_URL = os.getenv("SHAREPOINT_SITE_URL")
+SHAREPOINT_LIST_TITLE = os.getenv("SHAREPOINT_LIST_TITLE")
