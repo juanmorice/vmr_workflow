@@ -22,6 +22,15 @@ copy .env.example .env
 
 # 6. Test it works
 python src/vmr_standalone.py --dry-run
+
+# 7. If you want Airflow, start Docker Desktop first
+# Wait until Docker Desktop shows "Engine running"
+
+# 8. Start the Airflow stack
+docker compose up -d
+
+# 9. Verify containers exist
+docker compose ps
 ```
 
 ---
@@ -33,7 +42,28 @@ Before starting, ensure you have:
 - ✅ **Python 3.10+** — `python --version`
 - ✅ **Git** — `git --version`
 - ✅ **Network/VPN access** to Catalina company servers
-- ✅ **Docker** (optional, only if running Airflow)
+- ✅ **Docker Desktop** installed and able to start the Linux engine (optional, only if running Airflow)
+
+---
+
+## Docker Prerequisite For Airflow
+
+If you want to use Airflow, this repository does **not** install Docker containers by itself. The containers are created only after Docker Desktop is running and you execute `docker compose up -d` from the project root.
+
+Before running any Docker command:
+
+1. Start **Docker Desktop** from Windows.
+2. Wait until Docker Desktop shows **Engine running**.
+3. Confirm Docker is reachable:
+   ```powershell
+   docker version
+   ```
+4. Then start the project stack:
+   ```powershell
+   docker compose up -d
+   ```
+
+**Important on first run:** Docker may need several minutes to pull the base images (`apache/airflow`, `postgres`, `redis`). During that time, Docker Desktop may show no containers yet, or only some of them, until the image downloads complete.
 
 ---
 
@@ -103,19 +133,35 @@ python src/vmr_standalone.py --log-dir ./my_logs
 
 ### Option 2: Airflow + Docker
 ```powershell
-# Start Airflow services
-docker-compose up -d
+# 1. Start Docker Desktop manually
+# Wait for "Engine running" in Docker Desktop
+
+# 2. Start Airflow services from the repo root
+docker compose up -d
+
+# 3. Verify the services were created
+docker compose ps
 
 # View logs
-docker logs airflow_project-airflow-worker-1 --tail 100
+docker compose logs airflow-apiserver --tail 100
 
 # Access Airflow UI
 # Open: http://localhost:8080
 # Login: airflow / airflow
 
 # Stop services
-docker-compose down
+docker compose down
 ```
+
+Expected services after startup:
+- `postgres`
+- `redis`
+- `airflow-init`
+- `airflow-apiserver`
+- `airflow-scheduler`
+- `airflow-worker`
+- `airflow-dag-processor`
+- `airflow-triggerer`
 
 ---
 
@@ -160,6 +206,30 @@ python -c "from src.gettinglmcdataframe import *; print('✓ Connection OK')"
 AIRFLOW__SMTP__SMTP_USER=your_email@catalina.com
 AIRFLOW__SMTP__SMTP_PASSWORD=your_app_password  # NOT regular password
 ```
+
+### Issue: Docker Desktop shows no containers
+**Causes:**
+1. Docker Desktop is not running
+2. Docker Desktop has not finished starting the Linux engine
+3. `docker compose up -d` was never run from the project root
+4. First-run image pulls are still in progress
+
+**Solution:**
+```powershell
+# Verify Docker engine is available
+docker version
+
+# Start the project containers from the repo root
+docker compose up -d
+
+# Check current status
+docker compose ps
+
+# Inspect Airflow API server logs if localhost:8080 is not ready yet
+docker compose logs airflow-apiserver --tail 100
+```
+
+If `docker compose ps` is empty right after the first run, wait for the image pulls to finish and run it again.
 
 ---
 
