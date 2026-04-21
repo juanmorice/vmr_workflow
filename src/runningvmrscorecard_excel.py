@@ -1,3 +1,4 @@
+import os
 import logging
 import re
 import traceback
@@ -125,7 +126,7 @@ class RunningVMRScorecard:
             lmc_list_id = self.final_parameters["LMC List ID"]
             program_nm = self.final_parameters["Program Name"]
             segment_type = self.final_parameters["Segment Definitions"]
-            custom_brand_desc_path = "/analytical_services/Public/moricejuan/Catalina_PG_Categories.xlsx"
+            custom_brand_desc_path = os.getenv("CUSTOM_BRAND_DESC_PATH", "/analytical_services/Public/moricejuan/Catalina_PG_Categories.xlsx")
             pre_weeks = 52
             campaign_name = report_name_for_export
             dir_name = report_name_for_export

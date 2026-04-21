@@ -1,0 +1,205 @@
+================================================================================
+SERVER DEPLOYMENT CONFIGURATION CHANGES
+Without .env File Support
+================================================================================
+
+PROJECT PATHS:
+- Server Deployment Root: /workspace/mjuan/AIRFLOW_project/
+- Excel Input File: /workspace/mjuan/AIRFLOW_project/src/template_form.xlsx
+- Status Tracking File: /workspace/mjuan/AIRFLOW_project/outputs/status_tracking.json
+- Password File: /home/mjuan/Yellowbrick.pwd
+
+================================================================================
+1. src/vmr_standalone.py
+================================================================================
+
+CHANGE 1.1: Remove dotenv import and loading (Lines 38-39)
+----
+REMOVE THESE LINES:
+    from dotenv import load_dotenv
+    load_dotenv(project_root / '.env')
+
+REPLACE WITH: (DELETE, no replacement)
+
+
+CHANGE 1.2: Hardcode SMTP settings (Lines 80-85)
+----
+REPLACE:
+    smtp_host = os.getenv('AIRFLOW__SMTP__SMTP_HOST', 'smtp.office365.com')
+    smtp_port = int(os.getenv('AIRFLOW__SMTP__SMTP_PORT', '587'))
+    smtp_user = os.getenv('AIRFLOW__SMTP__SMTP_USER')
+    smtp_password = os.getenv('AIRFLOW__SMTP__SMTP_PASSWORD')
+    smtp_mail_from = os.getenv('AIRFLOW__SMTP__SMTP_MAIL_FROM', smtp_user)
+    smtp_starttls = os.getenv('AIRFLOW__SMTP__SMTP_STARTTLS', 'True').lower() == 'true'
+
+WITH:
+    smtp_host = 'smtp.office365.com'
+    smtp_port = 587
+    smtp_user = 'juanmorice.montoya@catalina.com'
+    smtp_password = 'PINObausch92!'
+    smtp_mail_from = 'juanmorice.montoya@catalina.com'
+    smtp_starttls = True
+
+
+CHANGE 1.3: Hardcode Excel file path (3 occurrences: Lines 138, 191, and in excel_importing())
+----
+REPLACE ALL:
+    excel_path = os.getenv('EXCEL_FILE_PATH', 'src/template_form.xlsx')
+
+WITH:
+    excel_path = '/workspace/mjuan/AIRFLOW_project/src/template_form.xlsx'
+
+
+================================================================================
+2. src/excelfilefetcher.py
+================================================================================
+
+CHANGE 2.1: Hardcode file properties (Lines 23-25)
+----
+REPLACE:
+    self.file_path = file_path or os.getenv("EXCEL_FILE_PATH")
+    self.sheet_name = sheet_name if sheet_name is not None else os.getenv("EXCEL_SHEET_NAME", 0)
+    self.header = header if header is not None else int(os.getenv("EXCEL_HEADER_ROW", 0))
+
+WITH:
+    self.file_path = file_path or "/workspace/mjuan/AIRFLOW_project/src/template_form.xlsx"
+    self.sheet_name = sheet_name if sheet_name is not None else 0
+    self.header = header if header is not None else 0
+
+
+CHANGE 2.2: Hardcode status tracking file path (Line 90)
+----
+REPLACE:
+    tracking_file = os.getenv("STATUS_TRACKING_FILE", "/opt/airflow/outputs/status_tracking.json")
+
+WITH:
+    tracking_file = "/workspace/mjuan/AIRFLOW_project/outputs/status_tracking.json"
+
+
+================================================================================
+3. src/other_modules/excelupdater.py
+================================================================================
+
+CHANGE 3.1: Hardcode Excel file path (Line 24)
+----
+REPLACE:
+    self.file_path = file_path or os.getenv("EXCEL_FILE_PATH")
+
+WITH:
+    self.file_path = file_path or "/workspace/mjuan/AIRFLOW_project/src/template_form.xlsx"
+
+
+CHANGE 3.2: Hardcode status tracking file path (Line 26)
+----
+REPLACE:
+    self.tracking_file = os.getenv("STATUS_TRACKING_FILE", "/opt/airflow/outputs/status_tracking.json")
+
+WITH:
+    self.tracking_file = "/workspace/mjuan/AIRFLOW_project/outputs/status_tracking.json"
+
+
+================================================================================
+4. src/gettinglmcdataframe.py
+================================================================================
+
+CHANGE 4.1: Hardcode Yellowbrick user (Line 35)
+----
+REPLACE:
+    yb_user = os.getenv('YELLOWBRICK_USER', getpass.getuser())
+
+WITH:
+    yb_user = "mjuan"
+
+
+================================================================================
+5. src/reports/omni_vmr_scorecard_2024_new_up.py
+================================================================================
+
+CHANGE 5.1: Hardcode Yellowbrick user (Line 83)
+----
+REPLACE:
+    yb_user = os.getenv('YELLOWBRICK_USER', getpass.getuser())
+
+WITH:
+    yb_user = "mjuan"
+
+
+================================================================================
+6. src/runningvmrscorecard_excel.py
+================================================================================
+
+CHANGE 6.1: Verify brand description path (Line 128)
+----
+CURRENT (Line 128):
+    custom_brand_desc_path = os.getenv("CUSTOM_BRAND_DESC_PATH", "/analytical_services/Public/moricejuan/Catalina_PG_Categories.xlsx")
+
+ACTION:
+    - Verify this path exists on the server
+    - If path is inaccessible, update it to correct server network location
+    - If accessible, no change needed (it already has a default fallback)
+
+
+================================================================================
+7. src/local_modules/safe_password.py
+================================================================================
+
+NO CODE CHANGES NEEDED
+
+This file has built-in 3-tier fallback:
+    1. Tries to read from os.getenv()
+    2. Falls back to /home/mjuan/Yellowbrick.pwd file
+    3. Falls back to interactive prompt
+
+SETUP REQUIRED (on server):
+    Create password file with secure permissions:
+    
+    $ echo "your_yellowbrick_password" > /home/mjuan/Yellowbrick.pwd
+    $ chmod 600 /home/mjuan/Yellowbrick.pwd
+
+
+================================================================================
+SUMMARY TABLE
+================================================================================
+
+File                                    | Changes Needed | Path Updates
+----------------------------------------|----------------|-----------------------------------------------------
+src/vmr_standalone.py                   | 3              | Remove load_dotenv, hardcode 6 SMTP vars, 3x excel_path
+src/excelfilefetcher.py                 | 2              | Hardcode file props, status_tracking path
+src/other_modules/excelupdater.py       | 2              | Hardcode 2 file paths
+src/gettinglmcdataframe.py              | 1              | Hardcode yb_user to "mjuan"
+src/reports/omni_vmr_scorecard_2024... | 1              | Hardcode yb_user to "mjuan"
+src/runningvmrscorecard_excel.py        | 1              | Verify brand description path
+src/local_modules/safe_password.py      | 0              | Setup /home/mjuan/Yellowbrick.pwd file
+
+
+TOTAL FILES TO MODIFY: 6
+TOTAL CHANGES: 10 (excluding verification)
+
+
+================================================================================
+DEPLOYMENT CHECKLIST
+================================================================================
+
+Before running on server:
+  [ ] Copy code to server: /workspace/mjuan/AIRFLOW_project/
+  [ ] Make 6 code changes listed above
+  [ ] Create Yellowbrick password file: /home/mjuan/Yellowbrick.pwd
+  [ ] Set password file permissions: chmod 600
+  [ ] Verify brand description path exists
+  [ ] Create outputs/ directory if missing: mkdir -p /workspace/mjuan/AIRFLOW_project/outputs
+  [ ] Test dry-run: cd /workspace/mjuan/AIRFLOW_project && python src/vmr_standalone.py --dry-run
+  [ ] Setup crontab or alternative scheduler
+
+
+================================================================================
+NOTES
+================================================================================
+
+1. ALL PATHS use the AIRFLOW_PROJECT structure, NOT the VMR_new test folder
+2. Password file MUST be created with chmod 600 for security
+3. Run scripts from project root (/workspace/mjuan/AIRFLOW_project), not from src/
+4. Status tracking JSON will auto-create on first run; don't create manually
+5. Module imports are already dynamic via sys.path - no import changes needed
+6. SharePoint-related code (settings.py, sharepointlistfetcher.py) can be left as-is (not used in standalone mode)
+
+================================================================================
